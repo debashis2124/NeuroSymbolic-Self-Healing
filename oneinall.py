@@ -21,6 +21,10 @@ from tensorflow.keras.models  import Model, clone_model
 from tensorflow.keras.layers  import Input, LSTM, RepeatVector, TimeDistributed, Dense
 from tensorflow.keras.callbacks import Callback
 
+def save_and_show(fname):
+    plt.savefig(fname, dpi=300, bbox_inches="tight")
+    plt.show()
+
 
 # --- STEP 1: LOAD & PREPROCESS (fixed feature_cols) ------------------------
 
@@ -28,8 +32,7 @@ df = pd.read_csv(
     "/content/dod_contracts.csv",
     parse_dates=["Date Signed", "Solicitation Date"],
     encoding="latin-1"
-) 
-#Note---------update/add your dataset and path---------
+)
 df.drop(columns=["Contract ID"], inplace=True)
 
 # Clean Action Obligation
@@ -137,6 +140,8 @@ f_nn_val   = nn_score(autoencoder, X_val)
 f_nn_test  = nn_score(autoencoder, X_test)
 
 
+# -----------------------------------------------------------------------------
+# STEP 3: SYMBOLIC RULE ENGINE
 # -----------------------------------------------------------------------------
 # STEP 3: SYMBOLIC RULE ENGINE
 df_tr = pd.DataFrame(X_train, columns=feature_cols)
@@ -341,7 +346,7 @@ print("\n=== Summary Comparison ===\n", df_res)
 
 
 # -----------------------------------------------------------------------------
-# STEP 11: PLOT EVERYTHING IN DD STYLE (You can update or modify what you need.)
+# STEP 11: PLOT EVERYTHING IN YOUR STYLE
 # -----------------------------------------------------------------------------
 # Prepare classifier & val-features dicts
 classifiers = dict(zip(models,[clf_nn,clf_sy,clf_hy,clf_hr,clf_aug,clf_adv,clf_ft]))
@@ -363,7 +368,7 @@ def plot_figure_2a():
     plt.plot(ep,history_ae.history['val_loss'],'--',label='Val Loss')
     plt.title('LSTM Autoencoder Reconstruction Loss')
     plt.xlabel('Epoch'); plt.ylabel('MSE Loss')
-    plt.legend(); plt.grid(); plt.show()
+    plt.legend(); plt.grid(); save_and_show("figure_2a_autoencoder_loss.png")
 
 # Figure 2b
 def plot_figure_2b():
@@ -373,7 +378,7 @@ def plot_figure_2b():
     plt.plot(ep,ae_cb.acc_vl,'--',label='Val Acc')
     plt.title('Neural Score Classification Accuracy')
     plt.xlabel('Epoch'); plt.ylabel('Accuracy')
-    plt.legend(); plt.grid(); plt.show()
+    plt.legend(); plt.grid(); save_and_show("figure_2b_autoencoder_accuracy.png")
 
 # Figure 3
 def plot_figure_3():
@@ -384,7 +389,7 @@ def plot_figure_3():
     if np.std(at)>0: sns.kdeplot(at,fill=True,label='Attack')
     else: plt.axvline(at[0],label='Attack(const)')
     plt.title('Symbolic Score Distribution'); plt.xlabel('g_SR(x)'); plt.ylabel('Density')
-    plt.legend(); plt.grid(); plt.show()
+    plt.legend(); plt.grid(); save_and_show("figure_3_score_distribution.png")
 
 # Figure 4
 def plot_figure_4():
@@ -393,9 +398,9 @@ def plot_figure_4():
     sns.kdeplot(g_sr_test[y_test==1],label='Symbolic-Attack')
     sns.kdeplot(R_test[y_test==1],label='NS-Attack')
     plt.title('Risk Scores of NS vs Neural vs Symbolic'); plt.xlabel('Score'); plt.ylabel('Density')
-    plt.legend(); plt.grid(); plt.show()
+    plt.legend(); plt.grid(); save_and_show("figure_4_risk_score.png")
 
-# --- After my function definitions I called everyting here---
+# --- After your function definitions ---
 plot_figure_2a()
 plot_figure_2b()
 plot_figure_3()
@@ -404,12 +409,10 @@ plot_figure_4()
 # Figure 5a
 test_df['Accuracy'].plot(kind='bar',rot=45,figsize=(10,6),
                          title="Threat Prediction Accuracy")
-plt.ylim(0,1); plt.grid(axis='y'); plt.tight_layout(); plt.show()
-
+plt.ylim(0,1); plt.grid(axis='y'); plt.tight_layout(); save_and_show("figure_5a_threat_prediction_accuracy.png")
 # Figure 5b
 sns.heatmap(test_df.T,annot=True,fmt=".2f",cmap="Blues")
-plt.title('Test Set Evaluation Heatmap'); plt.tight_layout(); plt.show()
-
+plt.title('Test Set Evaluation Heatmap'); plt.tight_layout(); save_and_show("figure_5b_evaluation_heatmap.png")
 # Figure 5c
 plt.figure(figsize=(8,6))
 for nm,clf in classifiers.items():
@@ -417,8 +420,7 @@ for nm,clf in classifiers.items():
     fpr,tpr,_=roc_curve(y_val,ypr)
     plt.plot(fpr,tpr,label=f"{nm}(AUC={auc(fpr,tpr):.2f})")
 plt.plot([0,1],[0,1],'k--'); plt.title('ROC Curves'); plt.xlabel('FPR'); plt.ylabel('TPR')
-plt.legend(); plt.grid(); plt.tight_layout(); plt.show()
-
+plt.legend(); plt.grid(); plt.tight_layout(); save_and_show("figure_5c_roc_curve.png")
 # Figure 5d
 plt.figure(figsize=(8,6))
 for nm,clf in classifiers.items():
@@ -426,9 +428,8 @@ for nm,clf in classifiers.items():
     prec,rec,_=precision_recall_curve(y_val,ypr)
     plt.plot(rec,prec,label=f"{nm}(AP={auc(rec,prec):.2f})")
 plt.title('Precision-Recall Curves'); plt.xlabel('Recall'); plt.ylabel('Precision')
-plt.legend(); plt.grid(); plt.tight_layout(); plt.show()
-
-# Figures 6/7/8: Training/Validation/Test bar‐grids (Not necessary, If you want you can skip this scope)
+plt.legend(); plt.grid(); plt.tight_layout(); save_and_show("figure_5d_precision_recall.png")
+# Figures 6/7/8: Training/Validation/Test bar‐grids
 flat = pd.DataFrame({
     f"{sp}_{met}": df_res[(sp,met)]
     for sp in ["Train","Val","Test"]
@@ -438,18 +439,15 @@ flat = pd.DataFrame({
 # Training
 flat[[c for c in flat if c.startswith("Train")]].plot(
     kind='bar',rot=45,figsize=(14,6),title='Training Performance')
-plt.grid(axis='y'); plt.tight_layout(); plt.show()
-
+plt.grid(axis='y'); plt.tight_layout(); save_and_show("figure_training_preformance.png")
 # Validation
 flat[[c for c in flat if c.startswith("Val")]].plot(
     kind='bar',rot=45,figsize=(14,6),title='Validation Performance')
-plt.grid(axis='y'); plt.tight_layout(); plt.show()
-
+plt.grid(axis='y'); plt.tight_layout(); save_and_show("figure_validation_preformance.png")
 # Test
 flat[[c for c in flat if c.startswith("Test")]].plot(
     kind='bar',rot=45,figsize=(14,6),title='Test Performance')
-plt.grid(axis='y'); plt.tight_layout(); plt.show()
-
+plt.grid(axis='y'); plt.tight_layout(); save_and_show("figure_test_preformance.png")
 # =============================================================================
 # 1) Helper to build & compile a Keras MLP
 # =============================================================================
@@ -562,7 +560,6 @@ def plot_multi_histories(histories, metric, title):
     plt.xlabel('Epoch')
     plt.ylabel(metric.replace('_',' ').title())
     plt.grid(True)
-
     # Option A: automatic best placement
     plt.legend(loc='best', ncol=2, fontsize='small')
 
@@ -570,7 +567,7 @@ def plot_multi_histories(histories, metric, title):
     # plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', ncol=1, fontsize='small')
 
     plt.tight_layout()
-    plt.show()
+    save_and_show(f"figure_{metric}_per_epoch.png")
 
 
 def plot_train_epoch_metrics(histories):
@@ -605,8 +602,7 @@ def plot_train_epoch_metrics(histories):
     ax.legend(loc='best', fontsize='small')
 
     plt.tight_layout()
-    plt.show()
-
+    save_and_show("figure_training_epoch_metrics.png")
 
 def plot_val_epoch_metrics(histories):
     plt.figure(figsize=(16,12))
@@ -640,9 +636,8 @@ def plot_val_epoch_metrics(histories):
     ax.set_ylabel("F1 Score")
     ax.grid(True)
     ax.legend(loc='best', fontsize='small')
-
     plt.tight_layout()
-    plt.show()
+    save_and_show("figure_validation_epoch_metrics.png")
 
 # Loss, Accuracy, Precision, Recall
 plot_multi_histories(histories, 'loss',      'Loss per Epoch')
@@ -699,4 +694,5 @@ ax.set_title("Compromised vs. Recovered by Model")
 ax.set_ylabel("Number of Samples")
 ax.grid(axis='y', linestyle='--', alpha=0.7)
 plt.tight_layout()
+plt.savefig("compromised_recovery.png", dpi=300, bbox_inches="tight")
 plt.show()
